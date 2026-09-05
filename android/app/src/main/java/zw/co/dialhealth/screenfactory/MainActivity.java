@@ -43,7 +43,11 @@ public final class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         renderNativeBootShell();
-        createWebViewSafely();
+        // Do not initialize WebView inside the launch-critical onCreate path.
+        // Some Android/WebView providers can take many seconds to cold-start; if we
+        // block here the OS appears to the user as if the app never opened. Render
+        // the native boot shell first, then initialize the dashboard WebView.
+        root.postDelayed(this::createWebViewSafely, 180);
     }
 
     private void renderNativeBootShell() {
