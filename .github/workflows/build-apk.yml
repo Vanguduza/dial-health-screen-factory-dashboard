@@ -26,7 +26,7 @@ jobs:
         run: yes | sdkmanager "platforms;android-36" "build-tools;36.0.0" >/dev/null
       - name: Build installable APK
         run: gradle -p android assembleDebug --no-daemon
-      - name: Android 16 emulator launch smoke test
+      - name: Android 16 launcher smoke test
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 36
@@ -36,9 +36,10 @@ jobs:
           script: |
             adb install -r android/app/build/outputs/apk/debug/app-debug.apk
             adb logcat -c
-            adb shell am start -W -n zw.co.dialhealth.screenfactory.mobile/zw.co.dialhealth.screenfactory.MainActivity | tee /tmp/launch.txt
-            grep -q "Status: ok" /tmp/launch.txt
+            adb shell cmd package resolve-activity --brief -c android.intent.category.LAUNCHER zw.co.dialhealth.screenfactory.mobile | grep -q "zw.co.dialhealth.screenfactory.MainActivity"
+            adb shell am start -n zw.co.dialhealth.screenfactory.mobile/zw.co.dialhealth.screenfactory.MainActivity
             sleep 3
+            adb shell pidof zw.co.dialhealth.screenfactory.mobile
             adb shell dumpsys activity activities | grep -q "zw.co.dialhealth.screenfactory.mobile/zw.co.dialhealth.screenfactory.MainActivity"
             if adb logcat -d | grep -E "FATAL EXCEPTION.*zw.co.dialhealth.screenfactory.mobile|Process: zw.co.dialhealth.screenfactory.mobile"; then exit 1; fi
       - name: Prepare artifact
