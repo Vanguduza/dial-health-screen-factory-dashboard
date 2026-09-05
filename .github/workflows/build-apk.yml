@@ -26,6 +26,21 @@ jobs:
         run: yes | sdkmanager "platforms;android-35" "build-tools;35.0.0" >/dev/null
       - name: Build installable APK
         run: gradle -p android assembleDebug --no-daemon
+      - name: Emulator launch smoke test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+            adb logcat -c
+            adb shell am start -W -n zw.co.dialhealth.screenfactory/.MainActivity | tee /tmp/launch.txt
+            grep -q "Status: ok" /tmp/launch.txt
+            sleep 6
+            adb shell dumpsys activity activities | grep -q "zw.co.dialhealth.screenfactory/.MainActivity"
+            if adb logcat -d | grep -E "FATAL EXCEPTION.*zw.co.dialhealth.screenfactory|Process: zw.co.dialhealth.screenfactory"; then exit 1; fi
       - name: Prepare artifact
         run: cp android/app/build/outputs/apk/debug/app-debug.apk DialHealthScreenFactory.apk
       - uses: actions/upload-artifact@v4
