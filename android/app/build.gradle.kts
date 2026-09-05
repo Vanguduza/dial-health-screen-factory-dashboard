@@ -4,14 +4,14 @@ plugins {
 
 android {
     namespace = "zw.co.dialhealth.screenfactory"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
-        applicationId = "zw.co.dialhealth.screenfactory"
+        applicationId = "zw.co.dialhealth.screenfactory.mobile"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 3
-        versionName = "1.2.0"
+        targetSdk = 36
+        versionCode = 4
+        versionName = "1.3.0"
     }
 
     buildTypes {
