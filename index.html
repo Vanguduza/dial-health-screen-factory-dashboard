@@ -36,7 +36,13 @@ async function resolveEndpoint(force=false){
   try{
     const r=await fetch('endpoint.json?t='+Date.now(),{cache:'no-store'}); if(!r.ok)throw new Error('endpoint '+r.status);
     const data=await r.json(); if(!validBase(data.base_url))throw new Error('invalid endpoint');
-    if(force||data.base_url!==currentBase){currentBase=data.base_url.replace(/\/$/,'');$('app').src=currentBase+'/sf/'+encodeURIComponent(key)+'/';}
+    if(force||data.base_url!==currentBase){
+      currentBase=data.base_url.replace(/\/$/,'');
+      const q=new URLSearchParams(location.search),forward=new URLSearchParams();
+      for(const name of ['google_oauth_code','google_oauth_state','google_oauth_error']){const v=q.get(name);if(v)forward.set(name,v)}
+      $('app').src=currentBase+'/sf/'+encodeURIComponent(key)+'/'+(forward.toString()?'?'+forward.toString():'');
+      if(forward.toString())setTimeout(()=>history.replaceState(null,'',location.pathname),0);
+    }
     $('gate').classList.add('hidden');$('app').style.display='block';
   }catch(e){state('Live factory endpoint is temporarily unavailable.','bad');$('retry').classList.remove('hidden');}
 }
