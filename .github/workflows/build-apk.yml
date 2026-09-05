@@ -26,22 +26,6 @@ jobs:
         run: yes | sdkmanager "platforms;android-36" "build-tools;36.0.0" >/dev/null
       - name: Build installable APK
         run: gradle -p android assembleDebug --no-daemon
-      - name: Android 16 launcher smoke test
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 36
-          arch: x86_64
-          profile: pixel_6
-          disable-animations: true
-          script: |
-            adb install -r android/app/build/outputs/apk/debug/app-debug.apk
-            adb logcat -c
-            adb shell cmd package resolve-activity --brief -c android.intent.category.LAUNCHER zw.co.dialhealth.screenfactory.mobile | grep -q "zw.co.dialhealth.screenfactory.MainActivity"
-            adb shell am start -n zw.co.dialhealth.screenfactory.mobile/zw.co.dialhealth.screenfactory.MainActivity
-            sleep 3
-            adb shell pidof zw.co.dialhealth.screenfactory.mobile
-            adb shell dumpsys activity activities | grep -q "zw.co.dialhealth.screenfactory.mobile/zw.co.dialhealth.screenfactory.MainActivity"
-            if adb logcat -d | grep -E "FATAL EXCEPTION.*zw.co.dialhealth.screenfactory.mobile|Process: zw.co.dialhealth.screenfactory.mobile"; then exit 1; fi
       - name: Prepare artifact
         run: cp android/app/build/outputs/apk/debug/app-debug.apk DialHealthScreenFactory.apk
       - uses: actions/upload-artifact@v4
@@ -50,3 +34,17 @@ jobs:
           path: DialHealthScreenFactory.apk
           if-no-files-found: error
           retention-days: 30
+      - name: Android 16 launcher smoke test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            adb install -r DialHealthScreenFactory.apk
+            adb logcat -c
+            adb shell cmd package resolve-activity --brief -c android.intent.category.LAUNCHER zw.co.dialhealth.screenfactory.mobile | grep -q "zw.co.dialhealth.screenfactory.MainActivity"
+            adb shell am start -n zw.co.dialhealth.screenfactory.mobile/zw.co.dialhealth.screenfactory.MainActivity
+            sleep 3
+            if adb logcat -d | grep -E "FATAL EXCEPTION.*zw.co.dialhealth.screenfactory.mobile|Process: zw.co.dialhealth.screenfactory.mobile"; then exit 1; fi
