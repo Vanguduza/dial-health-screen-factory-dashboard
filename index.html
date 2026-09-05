@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<title>Dial Health Screen Factory</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:Inter,system-ui,sans-serif;background:#f5f8fa;color:#102033;overflow:hidden}
+#app{position:fixed;inset:0;width:100%;height:100%;border:0;background:#f5f8fa;display:none}
+#gate{position:fixed;inset:0;display:grid;place-items:center;padding:22px;background:linear-gradient(160deg,#e8f7f4,#f8fafc 55%,#eef2f7)}
+.card{width:min(520px,100%);background:#fff;border:1px solid #dbe5ea;border-radius:24px;padding:26px;box-shadow:0 18px 54px rgba(15,35,55,.12)}
+.brand{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#0f766e;font-weight:900}.title{font-size:28px;font-weight:900;margin:7px 0 6px}.muted{color:#64748b;line-height:1.55;font-size:13px}
+.status{margin-top:18px;padding:12px 14px;border-radius:14px;background:#f1f5f9;font-size:13px;font-weight:750}.status.bad{background:#fff1f2;color:#be123c}.status.good{background:#ecfdf5;color:#047857}
+.keyrow{display:flex;gap:8px;margin-top:14px}.keyrow input{flex:1;min-width:0;border:1px solid #cbd5e1;border-radius:12px;padding:11px 12px;font:inherit}.keyrow button,.retry{border:0;border-radius:12px;background:#0f766e;color:#fff;padding:11px 15px;font-weight:850;cursor:pointer}
+.small{font-size:11px;color:#94a3b8;margin-top:12px}.hidden{display:none!important}
+</style>
+</head>
+<body>
+<iframe id="app" title="Dial Health Screen Factory" allow="clipboard-read; clipboard-write"></iframe>
+<div id="gate"><div class="card"><div class="brand">Dial Health · Control Plane</div><div class="title">Screen Factory</div><div class="muted">Stable dashboard entrypoint. The live Oracle tunnel is resolved automatically, so this address does not change when the tunnel reconnects.</div><div id="status" class="status">Connecting to the live factory…</div><div id="keybox" class="keyrow hidden"><input id="key" type="password" autocomplete="off" placeholder="Access key"><button id="save">Open</button></div><button id="retry" class="retry hidden" style="margin-top:12px">Retry</button><div class="small">The access key is stored only in this browser. It is never written to this public page repository.</div></div></div>
+<script>
+const $=id=>document.getElementById(id), storeKey='dial-health-screen-factory-access-key';
+let currentBase='';
+function accessKey(){
+  const hash=decodeURIComponent(location.hash.slice(1)).trim();
+  if(hash){localStorage.setItem(storeKey,hash);history.replaceState(null,'',location.pathname+location.search);return hash;}
+  return localStorage.getItem(storeKey)||'';
+}
+function state(message,kind=''){const s=$('status');s.textContent=message;s.className='status '+kind;}
+function askKey(){state('Access key required.');$('keybox').classList.remove('hidden');$('retry').classList.add('hidden');}
+function validBase(v){try{const u=new URL(v);return u.protocol==='https:'&&/\.trycloudflare\.com$/i.test(u.hostname)}catch{return false}}
+async function resolveEndpoint(force=false){
+  const key=accessKey(); if(!key){askKey();return;}
+  $('keybox').classList.add('hidden');$('retry').classList.add('hidden');state('Resolving live factory endpoint…');
+  try{
+    const r=await fetch('endpoint.json?t='+Date.now(),{cache:'no-store'}); if(!r.ok)throw new Error('endpoint '+r.status);
+    const data=await r.json(); if(!validBase(data.base_url))throw new Error('invalid endpoint');
+    if(force||data.base_url!==currentBase){currentBase=data.base_url.replace(/\/$/,'');$('app').src=currentBase+'/sf/'+encodeURIComponent(key)+'/';}
+    $('gate').classList.add('hidden');$('app').style.display='block';
+  }catch(e){state('Live factory endpoint is temporarily unavailable.','bad');$('retry').classList.remove('hidden');}
+}
+$('save').onclick=()=>{const v=$('key').value.trim();if(v){localStorage.setItem(storeKey,v);resolveEndpoint(true)}};
+$('key').addEventListener('keydown',e=>{if(e.key==='Enter')$('save').click()});
+$('retry').onclick=()=>resolveEndpoint(true);
+resolveEndpoint(true);
+setInterval(()=>resolveEndpoint(false),30000);
+</script>
+</body>
+</html>
