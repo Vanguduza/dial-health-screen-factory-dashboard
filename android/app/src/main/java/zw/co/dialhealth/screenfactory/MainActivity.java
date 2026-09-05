@@ -22,11 +22,12 @@ public final class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         renderNativeShell();
-        getWindow().getDecorView().postDelayed(() -> {
-            Uri callback = getIntent() != null ? getIntent().getData() : null;
-            if (isOAuthCallback(callback)) openOAuthResult(callback);
-            else openDashboard();
-        }, 350);
+        // Keep the native Activity visibly open on every normal launch. Previous
+        // builds immediately transferred focus to a browser, which made the APK
+        // appear not to open on physical devices. Only OAuth deep-link callbacks
+        // are forwarded automatically; normal dashboard launch is user initiated.
+        Uri callback = getIntent() != null ? getIntent().getData() : null;
+        if (isOAuthCallback(callback)) openOAuthResult(callback);
     }
 
     private void renderNativeShell() {
@@ -58,7 +59,7 @@ public final class MainActivity extends Activity {
         root.addView(progress, pp);
 
         statusText = new TextView(this);
-        statusText.setText("Opening the live image pipeline dashboard…");
+        statusText.setText("Screen Factory is ready. Open the live dashboard when you are ready.");
         statusText.setTextColor(Color.rgb(100,116,139));
         statusText.setTextSize(14);
         statusText.setGravity(Gravity.CENTER);
@@ -123,6 +124,5 @@ public final class MainActivity extends Activity {
         setIntent(intent);
         Uri uri = intent != null ? intent.getData() : null;
         if (isOAuthCallback(uri)) openOAuthResult(uri);
-        else openDashboard();
     }
 }
